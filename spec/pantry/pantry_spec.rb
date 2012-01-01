@@ -5,12 +5,9 @@ require_relative '../../pantries/test_pantry'
 module TestPantries
   describe TestPantry do
     let(:subject) {TestPantry.new}
-    let(:described) {PantryTest::Described.new(:descriptor => 'Described')}
     let(:named) {PantryTest::Named.new(:name => 'Named')}
   
     context 'empty pantry' do
-      let(:subject) {TestPantry.new}
-    
       it 'stacks nothing gracefully' do
         subject.stack
       end
@@ -48,14 +45,16 @@ module TestPantries
       end
     end
   
-    context 'with a multiple, simple resource' do
+    context 'with multiple, simple resources' do
+      let(:described) {PantryTest::Described.new(:descriptor => 'Described')}
+
       before(:each) do
         subject.can_stack PantryTest::Named, PantryTest::Described
       end
 
-    it 'has a stackable that answers its id_value' do
-      described.id_value.should == 'Described'  
-    end
+      it 'has a stackable that answers its id_value' do
+        described.id_value.should == 'Described'  
+      end
     
       it 'has a stackable with a default id_value_method_name' do
         described.id_value_method_names.should == [:descriptor]
@@ -72,6 +71,31 @@ module TestPantries
         y[:attributes][:descriptor].should == 'Described'
         x.has_key?(:foreign_values)
         y.has_key?(:foreign_values)
+      end
+    end
+
+    context 'with a single, self-related resource' do
+      let(:whole) {PantryTest::Composite.new(:some_identifying_value => 'Some whole')}
+      let(:part) {PantryTest::Composite.new(:some_identifying_value => 'Some part')}
+
+      before(:each) do
+        whole.parts << part
+        part.whole = whole
+        subject.can_stack PantryTest::Composite, :id_value_method => :some_identifying_value
+      end
+  
+      it 'has a stackable with a specified id_value_method_name' do
+        whole.id_value_method_names.should == [:some_identifying_value]
+      end
+
+      it 'has a stackable that answers its id_value' do
+        whole.id_value.should == 'Some whole'
+      end
+  
+      it 'produces stackable data structures for each resource' do
+        p = part.to_pantry
+        p[:attributes][:some_identifying_value].should == 'Some part'
+        p[:foreign_values].should == {:whole => 'Some whole'}
       end
     end
 
