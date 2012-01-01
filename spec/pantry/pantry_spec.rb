@@ -83,7 +83,7 @@ module TestPantries
         part.whole = whole
         subject.can_stack PantryTest::Composite, :id_value_method => :some_identifying_value
       end
-  
+
       it 'has a stackable with a specified id_value_method_name' do
         whole.id_value_method_names.should == [:some_identifying_value]
       end
@@ -95,7 +95,24 @@ module TestPantries
       it 'produces stackable data structures for each resource' do
         p = part.to_pantry
         p[:attributes][:some_identifying_value].should == 'Some part'
-        p[:foreign_values].should == {:whole => 'Some whole'}
+        p[:foreign_values].should == {:whole => 'Some whole', :owner => nil}
+      end
+    end
+
+    context 'with two resources, associated polymorphically' do
+      let(:whole) {PantryTest::Composite.new(:some_identifying_value => 'Some whole')}
+      let(:named) {PantryTest::Named.new(:name => 'Named')}
+
+      before(:each) do
+        whole.owner = named
+        subject.can_stack PantryTest::Named
+        subject.can_stack PantryTest::Composite, :id_value_method => :some_identifying_value
+      end
+  
+      it 'produces stackable data structures for each resource' do
+        w = whole.to_pantry
+        w[:attributes][:some_identifying_value].should == 'Some whole'
+        w[:foreign_values].should == {:owner => 'Named', :whole => nil}
       end
     end
 

@@ -9,7 +9,11 @@ module Pantry
     
       def foreign_values
         self.class.reflect_on_all_associations(:belongs_to).
-          inject({}) {|m, a| m[a.name] = (self.send a.name).id_value; m}
+          inject({}) do |m, a|
+            ao = self.send a.name
+            m[a.name] = (ao ? ao.id_value : nil)
+            m
+          end
       end
 
       def id_value_method_names
