@@ -39,12 +39,24 @@ module TestPantries
           named.id_value.should == 'Named'  
         end
 
-        it 'produces a stackable data structure' do
+        it "it knows a pantry record's class" do
           p = named.to_pantry
-          p[:attributes][:name].should == 'Named'
-          p[:class_name].should == 'PantryTest::Named'
-          p[:id_value].should == 'Named' 
-          p.has_key?(:foreign_values)
+          subject.klass(p).name.should == 'PantryTest::Named'
+        end
+
+        it "it knows a pantry record's attributes" do
+          p = named.to_pantry
+          subject.attributes(p)[:name].should == 'Named'
+        end
+
+        it "it knows a pantry record's id_value" do
+          p = named.to_pantry
+          subject.id_value(p).should == 'Named'
+        end
+
+        it "it knows a pantry record's foreign_values" do
+          p = named.to_pantry
+          p.should have_key(:foreign_values)
         end
       end
 
@@ -74,9 +86,9 @@ module TestPantries
           y[:attributes][:descriptor].should == 'Described'
           y[:class_name].should == 'PantryTest::Described'
           x[:id_value].should == 'Named' 
-          x.has_key?(:foreign_values)
+          x.should have_key(:foreign_values)
           y[:id_value].should == 'Described' 
-          y.has_key?(:foreign_values)
+          y.should have_key(:foreign_values)
         end
       end
 
@@ -100,8 +112,8 @@ module TestPantries
 
         it 'produces stackable data structures for each resource' do
           p = part.to_pantry
-          p[:attributes][:some_identifying_value].should == 'Some part'
-          p[:foreign_values].should == {:whole => 'Some whole', :owner => nil}
+          subject.attributes(p)[:some_identifying_value].should == 'Some part'
+          subject.foreign_values(p).should == {:whole => 'Some whole', :owner => nil}
         end
       end
 
