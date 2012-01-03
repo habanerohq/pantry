@@ -15,9 +15,9 @@ module Pantry
       result = klass.new(attributes)
       foreign_values.each do |k, v|
         if v
-          _association_reflection = klass.reflect_on_association(k)
-          _foreign_class = _association_reflection.klass
-          result.send "#{_association_reflection.foreign_key}=",  _foreign_class.where(_foreign_class.id_value_method_names.first => v).last.id
+          r = klass.reflect_on_association(k)
+          f = foreign_class(r)
+          result.send "#{r.foreign_key}=",  f.where(f.id_value_method_names.first => v).last.id
         end
       end
       result
@@ -26,5 +26,13 @@ module Pantry
     def klass
       class_name.constantize
     end
+    
+    def foreign_class(reflection)
+      if reflection.options[:polymorphic]
+        attributes[:"#{reflection.name}_type"].constantize
+      else
+        reflection.klass
+      end
+    end    
   end
 end

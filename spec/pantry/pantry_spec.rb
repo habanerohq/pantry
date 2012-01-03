@@ -160,6 +160,27 @@ module TestPantries
           ar.whole_id.should == p.whole_id
         end
       end
+
+      context 'with two resources, associated polymorphically' do
+        let(:whole) {PantryTest::Composite.new(:some_identifying_value => 'Some whole')}
+        let(:named) {PantryTest::Named.new(:name => 'Named')}
+
+        before(:each) do
+          whole.owner = named
+          whole.save!
+          subject.can_stack PantryTest::Named
+          subject.can_stack PantryTest::Composite, :id_value_method => :some_identifying_value
+        end
+
+        it 'can use what it stacks' do
+          w = PantryTest::Composite.find_by_some_identifying_value('Some whole')
+          o = w.owner
+          p = w.to_pantry
+          p.attributes[:owner_id] = nil
+          ar = p.to_model
+          ar.owner_id.should == w.owner_id
+        end
+      end
     end
   end
 end
