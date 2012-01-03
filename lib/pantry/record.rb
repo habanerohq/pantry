@@ -1,10 +1,11 @@
+require_relative 'item'
 module Pantry
   module Record
     extend ActiveSupport::Concern
 
     module InstanceMethods
       def to_pantry
-        {:class_name => self.class.name, :id_value => id_value, :attributes => attributes.symbolize_keys, :foreign_values => foreign_values}
+        Pantry::Item.new(self.class.name, id_value, attributes, foreign_values)
       end
     
       def foreign_values
