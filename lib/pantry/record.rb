@@ -4,7 +4,7 @@ module Pantry
 
     module InstanceMethods
       def to_pantry
-        {:attributes => attributes.symbolize_keys, :foreign_values => foreign_values}
+        {:class_name => self.class.name, :id_value => id_value, :attributes => attributes.symbolize_keys, :foreign_values => foreign_values}
       end
     
       def foreign_values
@@ -17,7 +17,7 @@ module Pantry
       end
 
       def id_value_method_names
-        [self.class.id_value_method_prcedence.detect{|sym| respond_to?(sym)}]
+        self.class.id_value_method_names
       end
     
       def id_values
@@ -31,8 +31,12 @@ module Pantry
 
     module ClassMethods
       attr_accessor :pantry
+
+      def id_value_method_names
+        [id_value_method_precedence.detect{|sym| attribute_names.include?(sym.to_s)}]
+      end
       
-      def id_value_method_prcedence
+      def id_value_method_precedence
         if o = pantry.stackables_options[self]
           [o[:id_value_method]]
         else
