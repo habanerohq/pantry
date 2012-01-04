@@ -9,13 +9,13 @@ module TestPantries
   
     context 'empty pantry' do
       FileUtils.remove_dir("#{Rails.root}/data/pantries", true)      
-      it 'uses nothing gracefully' do
-        subject.use
-      end
-      
-      it 'creates a file with a default name in a dafault location' do
+      it 'creates a file with a default name in a default location' do
         subject.stack
         File.exists?("#{Rails.root}/data/pantries/test_pantry_1.pantry").should == true
+      end
+
+      it 'uses nothing gracefully' do
+        subject.use
       end
     end
     
@@ -91,7 +91,7 @@ module TestPantries
           y.id_value.should == 'Described' 
         end
     
-        it 'creates a file with a default name in a dafault location' do
+        it 'creates a file with a default name in a default location' do
           named.save!
           described.save!
           subject.stack
@@ -123,7 +123,7 @@ module TestPantries
           p.foreign_values.should == {:whole => 'Some whole', :owner => nil}
         end
 
-        it 'creates a file with a default name in a dafault location' do
+        it 'creates a file with a default name in a default location' do
           whole.save!
           subject.stack
           File.exists?("#{Rails.root}/data/pantries/test_pantry_3.pantry").should == true
@@ -146,7 +146,7 @@ module TestPantries
           w.foreign_values.should == {:owner => 'Named', :whole => nil}
         end
 
-        it 'creates a file with a default name in a dafault location' do
+        it 'creates a file with a default name in a default location' do
           named.save!
           subject.stack
           File.exists?("#{Rails.root}/data/pantries/test_pantry_4.pantry").should == true
@@ -221,7 +221,7 @@ module TestPantries
           subject.can_stack PantryTest::Composite, :id_value_method => :some_identifying_value
         end
 
-        it 'can use a file with a default name in a dafault location' do
+        it 'can use a file with a default name in a default location' do
           subject.stack
           PantryTest::Named.destroy_all
           PantryTest::Composite.destroy_all
@@ -230,6 +230,14 @@ module TestPantries
           whole.id += 1
           whole.owner_id += 1
           named.id += 1
+          whole.should == w
+          named.should == w.owner
+        end
+
+        it 'skips items whose id_values are already present on the database' do
+          subject.stack
+          subject.use
+          w = PantryTest::Composite.find_all_by_some_identifying_value('Some whole').last
           whole.should == w
           named.should == w.owner
         end
