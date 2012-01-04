@@ -8,12 +8,14 @@ module TestPantries
     let(:named) {PantryTest::Named.new(:name => 'Named', :value => 'Fred', :created_at =>  Time.now)}
   
     context 'empty pantry' do
-      it 'stacks nothing gracefully' do
-        subject.stack
-      end
-
+      FileUtils.remove_dir("#{Rails.root}/data/pantries", true)      
       it 'uses nothing gracefully' do
         subject.use
+      end
+      
+      it 'creates a file with a default name in a dafault location' do
+        subject.stack
+        File.exists?("#{Rails.root}/data/pantries/test_pantry_1.pantry").should == true
       end
     end
     
@@ -53,6 +55,11 @@ module TestPantries
           p = named.to_pantry
           p.id_value.should == 'Named'
         end
+
+        it "it knows a pantry record's id_value" do
+          p = named.to_pantry
+          p.id_value.should == 'Named'
+        end
       end
 
       context 'with multiple, simple resources' do
@@ -83,6 +90,13 @@ module TestPantries
           x.id_value.should == 'Named' 
           y.id_value.should == 'Described' 
         end
+    
+        it 'creates a file with a default name in a dafault location' do
+          named.save!
+          described.save!
+          subject.stack
+          File.exists?("#{Rails.root}/data/pantries/test_pantry_2.pantry").should == true
+        end
       end
 
       context 'with a single, self-related resource' do
@@ -108,6 +122,12 @@ module TestPantries
           p.attributes[:some_identifying_value].should == 'Some part'
           p.foreign_values.should == {:whole => 'Some whole', :owner => nil}
         end
+
+        it 'creates a file with a default name in a dafault location' do
+          whole.save!
+          subject.stack
+          File.exists?("#{Rails.root}/data/pantries/test_pantry_3.pantry").should == true
+        end
       end
 
       context 'with two resources, associated polymorphically' do
@@ -124,6 +144,12 @@ module TestPantries
           w = whole.to_pantry
           w.attributes[:some_identifying_value].should == 'Some whole'
           w.foreign_values.should == {:owner => 'Named', :whole => nil}
+        end
+
+        it 'creates a file with a default name in a dafault location' do
+          named.save!
+          subject.stack
+          File.exists?("#{Rails.root}/data/pantries/test_pantry_4.pantry").should == true
         end
       end
     end
@@ -179,6 +205,33 @@ module TestPantries
           p.attributes[:owner_id] = nil
           ar = p.to_model
           ar.owner_id.should == w.owner_id
+        end
+      end
+    end
+
+    context 'using' do
+      context 'with two resources, associated polymorphically' do
+        let(:whole) {PantryTest::Composite.new(:some_identifying_value => 'Some whole')}
+        let(:named) {PantryTest::Named.new(:name => 'Named')}
+
+        before(:each) do
+          whole.owner = named
+          whole.save!
+          subject.can_stack PantryTest::Named
+          subject.can_stack PantryTest::Composite, :id_value_method => :some_identifying_value
+        end
+
+        it 'can use a file with a default name in a dafault location' do
+          subject.stack
+          PantryTest::Named.destroy_all
+          PantryTest::Composite.destroy_all
+          subject.use
+          w = PantryTest::Composite.find_by_some_identifying_value('Some whole')
+          whole.id += 1
+          whole.owner_id += 1
+          named.id += 1
+          whole.should == w
+          named.should == w.owner
         end
       end
     end

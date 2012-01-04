@@ -8,7 +8,7 @@ module Pantry
       @class_name = class_name
       @id_value = id_value
       @attributes = attributes.symbolize_keys
-      @foreign_values = foreign_values
+      @foreign_values = foreign_values.symbolize_keys
     end
 
     def to_model

@@ -21,9 +21,32 @@ module Pantry
     end
     
     def stack
+      fn = next_generation
+      FileUtils.mkpath(path)
+      File.open(fn, 'wb') do |f|
+        stackables.each do |s|
+          s.all.each do |r|
+            f.write "#{r.to_pantry.to_json}#{record_separator}"
+          end
+        end
+      end
     end
   
     def use
+      fn = generation_name
+      begin
+        File.open(fn, 'r').each(record_separator) do |l|
+          j = JSON.parse(l).symbolize_keys
+          i = Pantry::Item.new(j[:class_name], j[:id_value], j[:attributes], j[:foreign_values])
+          i.to_model.save!
+        end
+      rescue Errno::ENOENT => e
+        puts "ERROR: Pantry#use ---> #{e}"
+      end
+    end
+    
+    def path
+      Rails.root.join('data/pantries')
     end
     
     protected
@@ -32,6 +55,28 @@ module Pantry
       klass = "#{sym}".classify.constantize
       klass.send :include, Pantry::Record
       klass.pantry = self
+    end
+    
+    def file_name(gen)
+      "#{path}/#{self.class.name.underscore}_#{gen}.pantry"
+    end
+    
+    def next_generation
+      file_name((generation_numbers.last || 0) + 1)
+    end
+    
+    def generation_name(i=0)
+      i > 0 ? i : file_name(generation_numbers[i - 1])
+    end
+    
+    def generation_numbers
+      Dir.glob("#{path}/#{self.class.name.underscore}*.pantry").map do |fn|
+        fn.split('.').first.split('_').last.to_i
+      end.sort
+    end
+    
+    def record_separator
+      "\n"
     end
   end
 end
