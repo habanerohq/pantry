@@ -38,8 +38,8 @@ module Pantry
       end
       
       def id_value_method_precedence
-        if o = pantry.stackables_options[self]
-          [o[:id_value_method]]
+        if o = pantry.options_for(self)[:id_value_method]
+          [o]
         else
           [:descriptor, :name, :label, :title]
         end

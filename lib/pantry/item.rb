@@ -12,8 +12,8 @@ module Pantry
     end
     
     def use
-      existing = klass.where(klass.id_value_method_names.first => id_value)
-      existing.any? ? skip : save_model
+      @existing = klass.where(klass.id_value_method_names.first => id_value)
+      @existing.any? ? send(pantry_options[:on_collision]) : save_model
     end
 
     def to_model
@@ -32,6 +32,14 @@ module Pantry
       class_name.constantize
     end
     
+    def pantry
+      klass.pantry
+    end
+    
+    def pantry_options
+      pantry.options_for(klass)
+    end
+    
     def foreign_class(reflection)
       if reflection.options[:polymorphic]
         attributes[:"#{reflection.name}_type"].constantize
@@ -44,6 +52,12 @@ module Pantry
     
     def skip
       #do nothing
+    end
+    
+    def replace
+      o = @existing.last
+      o.attributes = to_model.attributes
+      o.save!
     end
 
     def save_model

@@ -20,6 +20,10 @@ module Pantry
       @stackables_options ||= {}
     end
     
+    def options_for(stackable)
+      {:on_collision => :skip}.merge(stackables_options[stackable] || {})
+    end
+    
     def stack
       fn = next_generation
       FileUtils.mkpath(path)

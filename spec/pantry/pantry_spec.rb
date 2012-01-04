@@ -60,6 +60,11 @@ module TestPantries
           p = named.to_pantry
           p.id_value.should == 'Named'
         end
+
+        it "an item's pantry is it's enclosing pantry" do
+          p = named.to_pantry  
+          p.pantry.should == subject
+        end
       end
 
       context 'with multiple, simple resources' do
@@ -194,6 +199,7 @@ module TestPantries
         before(:each) do
           whole.owner = named
           whole.save!
+          named.save!
           subject.can_stack PantryTest::Named
           subject.can_stack PantryTest::Composite, :id_value_method => :some_identifying_value
         end
@@ -217,6 +223,7 @@ module TestPantries
         before(:each) do
           whole.owner = named
           whole.save!
+          named.save!
           subject.can_stack PantryTest::Named
           subject.can_stack PantryTest::Composite, :id_value_method => :some_identifying_value
         end
@@ -240,6 +247,36 @@ module TestPantries
           w = PantryTest::Composite.find_all_by_some_identifying_value('Some whole').last
           whole.should == w
           named.should == w.owner
+        end
+      end
+    end
+
+    context 'on collision' do
+      context 'with two resources, associated polymorphically' do
+        let(:whole) {PantryTest::Composite.new(:some_identifying_value => 'Some whole')}
+        let(:named) {PantryTest::Named.new(:name => 'Named')}
+
+        before(:each) do
+          whole.owner = named
+          whole.save!
+          named.save!
+          subject.can_stack PantryTest::Named, :on_collision => :replace
+          subject.can_stack PantryTest::Composite, :id_value_method => :some_identifying_value, :on_collision => :replace
+        end
+
+        it 'remembers on collision options' do
+          subject.options_for(PantryTest::Named).should == {:on_collision => :replace}
+          subject.options_for(PantryTest::Composite).should == {:id_value_method => :some_identifying_value, :on_collision => :replace}
+        end
+
+        it 'replaces duplicate when :on_collision option is :replace' do
+          whole_updated_at = whole.updated_at
+          named_updated_at = named.updated_at
+          subject.stack
+          subject.use
+          w = PantryTest::Composite.find_by_some_identifying_value('Some whole')
+          w.updated_at.should_not == whole_updated_at
+          w.owner.updated_at.should_not == named_updated_at
         end
       end
     end
