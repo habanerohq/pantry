@@ -34,15 +34,19 @@ module Pantry
       attr_accessor :pantry
 
       def id_value_method_names
-        if o = pantry.options_for(self)[:id_value_methods]
-          o.is_a?(Array) ? o : [o]
-        else
-          [id_value_method_precedence.detect{|sym| attribute_names.include?(sym.to_s)}]
-        end
+        [
+          pantry.options_for(self)[:id_value_methods] ||
+            id_value_method_precedence.detect(lambda {id_value_method_names_from_uniqueness_validator}){|sym| attribute_names.include?(sym.to_s)}
+        ].flatten
       end
       
       def id_value_method_precedence
         [:descriptor, :name, :label, :title]
+      end
+      
+      def id_value_method_names_from_uniqueness_validator
+        uv = validators.detect{|v| v.class == ActiveRecord::Validations::UniquenessValidator}
+        [uv.options[:scope], uv.attributes].flatten.compact if uv
       end
     end
   end

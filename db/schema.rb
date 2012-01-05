@@ -44,6 +44,7 @@ ActiveRecord::Schema.define(:version => 20111229222942) do
   end
 
   create_table "valueds", :force => true do |t|
+    t.string   "discriminator"
     t.string   "value"
     t.datetime "created_at"
     t.datetime "updated_at"

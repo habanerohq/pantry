@@ -325,6 +325,20 @@ module TestPantries
           d.last.value.should == 'Meat'
         end
       end
+
+      context 'with a uniqueness validator' do
+        let(:valued) {PantryTest::Valued.new(:discriminator => 'Toxic', :value => 'Tomatoes')}
+
+        before(:each) do
+          subject.can_stack PantryTest::Valued
+        end
+
+        it "it knows a pantry record's id_values" do
+          valued.id_value_method_names.should == [:discriminator, :value]
+          p = valued.to_pantry
+          p.id_values.should == {:discriminator => 'Toxic', :value => 'Tomatoes'}  
+        end
+      end
     end
   end
 end

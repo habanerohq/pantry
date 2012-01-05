@@ -16,6 +16,7 @@ class CreateTestModels < ActiveRecord::Migration
       t.timestamps
     end
     create_table :valueds, :force => true do |t|
+      t.string   :discriminator
       t.string   :value
       t.timestamps
     end
