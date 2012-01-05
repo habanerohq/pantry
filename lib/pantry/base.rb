@@ -29,7 +29,7 @@ module Pantry
       FileUtils.mkpath(path)
       File.open(fn, 'wb') do |f|
         stackables.each do |s|
-          s.all.each do |r|
+          candidates(s).each do |r|
             f.write "#{r.to_pantry.to_json}#{record_separator}"
           end
         end
@@ -58,6 +58,11 @@ module Pantry
       klass = "#{sym}".classify.constantize
       klass.send :include, Pantry::Record
       klass.pantry = self
+    end
+    
+    def candidates(klass)
+      s = options_for(klass)[:scope]
+      s ? s.inject(klass){|m, i| m.send(*i)} : klass.all
     end
     
     def file_name(gen)

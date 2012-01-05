@@ -137,7 +137,6 @@ module TestPantries
 
       context 'with two resources, associated polymorphically' do
         let(:whole) {PantryTest::Composite.new(:some_identifying_value => 'Some whole')}
-        let(:named) {PantryTest::Named.new(:name => 'Named')}
 
         before(:each) do
           whole.owner = named
@@ -194,7 +193,6 @@ module TestPantries
 
       context 'with two resources, associated polymorphically' do
         let(:whole) {PantryTest::Composite.new(:some_identifying_value => 'Some whole')}
-        let(:named) {PantryTest::Named.new(:name => 'Named')}
 
         before(:each) do
           whole.owner = named
@@ -218,7 +216,6 @@ module TestPantries
     context 'using' do
       context 'with two resources, associated polymorphically' do
         let(:whole) {PantryTest::Composite.new(:some_identifying_value => 'Some whole')}
-        let(:named) {PantryTest::Named.new(:name => 'Named')}
 
         before(:each) do
           whole.owner = named
@@ -254,7 +251,6 @@ module TestPantries
     context 'on collision' do
       context 'with two resources, associated polymorphically' do
         let(:whole) {PantryTest::Composite.new(:some_identifying_value => 'Some whole')}
-        let(:named) {PantryTest::Named.new(:name => 'Named')}
 
         before(:each) do
           whole.owner = named
@@ -277,6 +273,28 @@ module TestPantries
           w = PantryTest::Composite.find_by_some_identifying_value('Some whole')
           w.updated_at.should_not == whole_updated_at
           w.owner.updated_at.should_not == named_updated_at
+        end
+      end
+    end
+
+    context 'with a scope option given' do
+      context 'with two resources, associated polymorphically' do
+        let(:named2) {PantryTest::Named.new(:name => 'Named 2', :value => 'Bill')}
+
+        before(:each) do
+          named.save!
+          named2.save!
+          subject.can_stack PantryTest::Named, :scope => {:where => {:value => 'Bill'}}
+        end
+
+        it 'it stacks objects only within scope' do
+          subject.stack
+          PantryTest::Named.destroy_all
+          subject.use
+          n = PantryTest::Named.all
+          subject.options_for(PantryTest::Named)[:scope].should == {:where => {:value => 'Bill'}}
+          n.count.should == 1
+          n.first.value.should == 'Bill'
         end
       end
     end
