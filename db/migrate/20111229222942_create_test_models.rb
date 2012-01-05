@@ -11,7 +11,7 @@ class CreateTestModels < ActiveRecord::Migration
       t.timestamps
     end
     create_table :labelleds, :force => true do |t|
-      t.string   :name
+      t.string   :label
       t.string   :value
       t.timestamps
     end

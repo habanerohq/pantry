@@ -41,7 +41,7 @@ module Pantry
       begin
         File.open(fn, 'r').each(record_separator) do |l|
           j = JSON.parse(l).symbolize_keys
-          Pantry::Item.new(j[:class_name], j[:id_value], j[:attributes], j[:foreign_values]).use
+          Pantry::Item.new(j[:class_name], j[:id_values], j[:attributes], j[:foreign_values]).use
         end
       rescue Errno::ENOENT => e
         puts "ERROR: Pantry#use ---> #{e}"

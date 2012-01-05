@@ -2,17 +2,17 @@ require_relative 'record'
 require_relative 'base'
 module Pantry
   class Item
-    attr_accessor :class_name, :id_value, :attributes, :foreign_values
+    attr_accessor :class_name, :id_values, :attributes, :foreign_values
     
-    def initialize(class_name, id_value, attributes, foreign_values)
+    def initialize(class_name, id_values, attributes, foreign_values)
       @class_name = class_name
-      @id_value = id_value
+      @id_values = id_values.symbolize_keys
       @attributes = attributes.symbolize_keys
       @foreign_values = foreign_values.symbolize_keys
     end
     
     def use
-      @existing = klass.where(klass.id_value_method_names.first => id_value)
+      @existing = klass.where(id_values)
       @existing.any? ? send(pantry_options[:on_collision]) : save_model
     end
 
@@ -22,7 +22,7 @@ module Pantry
         if v
           r = klass.reflect_on_association(k)
           f = foreign_class(r)
-          result.send "#{r.foreign_key}=", f.where(f.id_value_method_names.first => v).last.id
+          result.send "#{r.foreign_key}=", f.where(v).last.id
         end
       end
       result
