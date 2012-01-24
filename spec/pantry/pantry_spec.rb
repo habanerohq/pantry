@@ -41,17 +41,17 @@ module TestPantries
           named.id_value.should == 'Named'  
         end
 
-        it "it knows a pantry record's class" do
+        it "knows a pantry record's class" do
           p = named.to_pantry
           p.klass.name.should == 'PantryTest::Named'
         end
 
-        it "it knows a pantry record's attributes" do
+        it "knows a pantry record's attributes" do
           p = named.to_pantry
           p.attributes[:name].should == 'Named'
         end
 
-        it "it knows a pantry record's id_value" do
+        it "knows a pantry record's id_value" do
           p = named.to_pantry
           p.id_values.should == {:name => 'Named'}
         end
@@ -308,7 +308,7 @@ module TestPantries
           described.id_value.should == 'Fresh Coffee'
         end
 
-        it "it knows a pantry record's id_value" do
+        it "knows a pantry record's id_value" do
           p = described.to_pantry
           p.id_values.should == {:descriptor => 'Fresh', :value => 'Coffee'}  
         end
@@ -333,7 +333,7 @@ module TestPantries
           subject.can_stack PantryTest::Valued
         end
 
-        it "it knows a pantry record's id_values" do
+        it "knows a pantry record's id_values" do
           valued.id_value_method_names.should == [:discriminator, :value]
           p = valued.to_pantry
           p.id_values.should == {:discriminator => 'Toxic', :value => 'Tomatoes'}  
