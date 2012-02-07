@@ -1,5 +1,4 @@
 require 'spec_helper'
-require_relative '../../pantries/test_pantry'
 
 module TestPantries
   describe TestPantry do
