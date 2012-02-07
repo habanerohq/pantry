@@ -1,33 +1,27 @@
-# This file is copied to spec/ when you run 'rails generate rspec:install'
-ENV["RAILS_ENV"] ||= 'test'
-require File.expand_path("../../config/environment", __FILE__)
-require 'rspec/rails'
-require 'rspec/autorun'
+require 'rubygems'
+require 'bundler/setup'
 
-# Requires supporting ruby files with custom matchers and macros, etc,
+require 'rspec'
+
+require 'active_record'
+require 'pantry'
+
+# this is a kludge... although we only use ActiveRecord, Pantry::Base uses
+# Rails to work out a base directory, and so do our tests
+module Rails
+  extend self
+
+  def root
+    @root ||= Pathname.new(File.dirname(File.dirname(__FILE__)))
+  end
+end
+
+# requires supporting ruby files with custom matchers and macros, etc,
 # in spec/support/ and its subdirectories.
 Dir[Rails.root.join("spec/support/**/*.rb")].each {|f| require f}
 
-RSpec.configure do |config|
-  # == Mock Framework
-  #
-  # If you prefer to use mocha, flexmock or RR, uncomment the appropriate line:
-  #
-  # config.mock_with :mocha
-  # config.mock_with :flexmock
-  # config.mock_with :rr
-  config.mock_with :rspec
+config = YAML::load_file(Rails.root.join('spec/config/database.yml'))
+ActiveRecord::Base.establish_connection(config['test'])
 
-  # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
-  config.fixture_path = "#{::Rails.root}/spec/fixtures"
-
-  # If you're not using ActiveRecord, or you'd prefer not to run each of your
-  # examples within a transaction, remove the following line or assign false
-  # instead of true.
-  config.use_transactional_fixtures = true
-
-  # If true, the base class of anonymous controllers will be inferred
-  # automatically. This will be the default behavior in future versions of
-  # rspec-rails.
-  config.infer_base_class_for_anonymous_controllers = false
-end
+ActiveRecord::Migration.verbose = false
+ActiveRecord::Migrator.migrate(Rails.root.join('spec/db/migrate'))
