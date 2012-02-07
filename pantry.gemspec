@@ -11,8 +11,7 @@ Gem::Specification.new do |s|
   s.authors = ["Mark Ratjens"]
   s.email = ["mark@habanerohq.com"]
   s.homepage = "http://www.habanerohq.com"
-  s.summary = %q{}
-  s.description = %q{}
+  s.summary = %q{A database unload/reload tool with smarts.}
 
   s.files = `git ls-files`.split("\n")
   s.test_files = `git ls-files -- {test,spec,features}/*`.split("\n")
