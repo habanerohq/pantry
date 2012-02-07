@@ -1,4 +1,3 @@
-require_relative 'record'
 module Pantry
   class Base
     def can_stack(*args)
@@ -11,6 +10,15 @@ module Pantry
         @stackables = (@stackables ||= []) + args
       end
     end
+
+    def refers_to(*args)
+      if args.last.is_a?(Hash)
+        make_stackable(args.first)
+        (@stackables_options ||= {})[args.first] = args.last
+      else
+        args.each{|a| make_stackable(a)}
+      end
+    end
     
     def stackables
       @stackables ||= []
@@ -21,7 +29,7 @@ module Pantry
     end
     
     def options_for(stackable)
-      {:on_collision => :skip}.merge(stackables_options[stackable] || {})
+      {:on_collision => :skip}.merge(stackables_options.detect{ |s| stackable.ancestors.include?(s.first) }.try(:last) || {})
     end
     
     def stack
@@ -41,7 +49,7 @@ module Pantry
       begin
         File.open(fn, 'r').each(record_separator) do |l|
           j = JSON.parse(l).symbolize_keys
-          Pantry::Item.new(j[:class_name], j[:id_values], j[:attributes], j[:foreign_values]).use
+          Pantry::Item.new(j[:class_name], j[:id_values], j[:attributes], j[:foreign_values], self).use
         end
       rescue Errno::ENOENT => e
         puts "ERROR: Pantry#use ---> #{e}"
@@ -57,9 +65,11 @@ module Pantry
     def make_stackable(sym)
       klass = "#{sym}".classify.constantize
       klass.send :include, Pantry::Record
-      klass.pantry = self
+      (klass.descendants << klass).each do |k|
+        k.pantry = self
+      end
     end
-    
+
     def candidates(klass)
       s = options_for(klass)[:scope]
       s ? s.inject(klass){|m, i| m.send(*i)} : klass.all
