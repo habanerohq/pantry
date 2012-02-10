@@ -109,7 +109,9 @@ Pantry helps you merge the data and allows you to declare how you want the confl
 To start unloading the current environment's database you create a subclass of <code>Pantry::Base</code> and declare which tables you wish to "stack". For example:
 
     class FirstPantry < Pantry::Base
-      can_stack Category
+      def initialize      
+        can_stack Category
+      end
     end
 
 declares that <code>FirstPantry</code> stacks only rows from the table associated with the <code>Category</code> class. To perform the stacking, write in your code somewhere:
@@ -127,7 +129,7 @@ NOTE: by default we put pantry classes in the pantries folder of the rails proje
 
 The <code>stack</code> method creates a pantry file in the data/pantries of your project (It will create the directory if it does not exist). The file name defaults to the underscored pantry subscripted with an auto-generated gernation number. Therefore, the first time you stack an instance of <code>FirstPantry</code>, it will create a file called data/pantries/first_pantry_1.pantry
 
-As yet, we are yet to provide an overriding capability for this.
+We are yet to provide an overriding capability for this.
     
 ## Value ids
 
@@ -180,16 +182,38 @@ Pantry works by checking whether a row exists that matches its stacked value id.
 
 ## Resolving foreign keys
 
-Any foreign keys on the stacked rows cannot be relied upon in the target database. This is because newly loaded records will have different keys to the those they had in their original database. Any foreign keys that refer to them become invalid. So as Pantry stacks a row, it examines the corresponding model's associations and determines a value id for each foreign key on the row. Pantry stores all foreign value ids when it stacks a row so that during a load, it can calculate a new foreign key on the target database.
+Any foreign keys on the stacked rows cannot be relied upon in the target database. This is because newly loaded rows will have different keys to the those they had in their original database. Any foreign keys that refer to them become invalid. So as Pantry stacks a row, it examines the corresponding model's associations and determines a value id for each foreign key on the row. Pantry stores all foreign value ids when it stacks a row so that during a load, it can calculate a new foreign key on the target database.
 
 Pantry can handle polymorphic associations.
 
+## Stack references
+
+Now that we've discussed how pantry resolves foreign keys, let's look a more advanced stacking scenario.
+
+Sometimes you may want to stack records that contain foreign keys to records that you <italics>don't</italics> want to stack. You'll want to do this if you have a target database that already has those other records loaded. 
+
+Let's look at an example. Suppose you have a target database of customers, purchase orders and order items. Suppose you have another source database (let's call it the source database) that has the customers replicated, but the purchase orders are unique, maybe because they're from a different sales territory. You want to stack only the purchase order and order item records from the source database, not the customer records, because they are duplicated in the target database.
+
+In this scenario we still need to know how to find the customer records on the target database so that we add the purchase orders to the correct customers. This is just another case of defining what the id_values are for customers. We use the <code>refers_to</code> to do this.
+
+    class OrderPantry < Pantry::Base
+      def initialize      
+        refers_to Customer, id_value_methods => [:customer_number]
+        can_stack PurchaseOrder, id_value_methods => [:purchase_order_number]
+        can_stack OrderItem, id_value_methods => [:order, :description]
+      end
+    end
+
+When this pantry is stacked, any time the process encounters a foreign_key that points to a customer, it will generate the correct id_values and store them in the pantry. When the pantry is used later, the process uses the stacked id_values for customers to locate the correct customer on the target database and uses its id as the foreign key wherever it's needed.
+
+Using this technique, you can "stitch" data records from many different databases, as long as you can devise a scheme for defining id_values for all the records you want to stack and use.
+
 ## Handling collisions
 
-Pantry implements schemes for handling row collisions, i.e when a stacked row has the same value id as an existing row on the target database. According to these schemes, usually either the existing record or the new record is the one that persists after upload. In order of precedence:
+Pantry implements strategies for handling row collisions, i.e when a stacked row has the same value id as an existing row on the target database. According to these strategies, usually either the existing row or the new row is the one that persists after upload. In order of precedence:
 
-1. first, if a created_at column exists, Pantry takes the row with the later created_at value (this is not yet implemented)
-2. next, if an updated_At column exists, Pantry takes the row with the later updated_at value (this is not yet implemented)
+1. first, if a <code>created_at</code> column exists, Pantry takes the row with the later <code>created_at</code> value (this is not yet implemented)
+2. next, if an <code>updated_at</code> column exists, Pantry takes the row with the later <code>updated_at</code> value (this is not yet implemented)
 3. finally, Pantry will skip the incoming stacked row leave the existing row untouched
 
 ## Explicitly defining an on-collision strategy
@@ -202,11 +226,11 @@ You can override the on-collision strategy in a number of ways. Here are some ex
 
     first_pantry.can_stack Category, :on_collision => :earlier_creation
   
-* Pantry will take the row with the earlier created_at (not yet implemented)
+* Pantry will take the row with the earlier <code>created_at</code> (not yet implemented)
 
     first_pantry.can_stack Category, :on_collision => :earlier_update
   
-* Pantry will take the row with the earlier updated_at (not yet implemented)
+* Pantry will take the row with the earlier <code>updated_at</code> (not yet implemented)
 
 In very rare circumstances, you may need to implement your own on-collision strategy. You can do this accordingly (not yet implemented):
 
@@ -214,7 +238,7 @@ In very rare circumstances, you may need to implement your own on-collision stra
       can_stack Category, :on_collision => :resolve_collision #this can be any method name as long as you implement it in your pantry.
   
       def resolve_collision(existing, incoming)
-      # write your implementation
+        # write your implementation
       end
     end
 
@@ -222,7 +246,7 @@ The callback takes two arguments, each is an instance of the <code>ActiveRecord<
 
 ## Multiple passes of the incoming stacks (not yet implemented)
 
-During the load, it is possible that the value id for a foreign key does not identify an existing record. This can be due to the complexity of the incoming data, such as when following trail of foreign keys exposes circular associations. Pantry handles this by parsing the incoming data multiple times deferring the processing of "difficult" records for subsequent parses.
+During the load, it is possible that the value id for a foreign key does not identify an existing row. This can be due to the complexity of the incoming data, such as when following trail of foreign keys exposes circular associations. Pantry handles this by parsing the incoming data multiple times deferring the processing of "difficult" rows for subsequent parses.
 
 ## Stack nesting (not yet implemented)
 

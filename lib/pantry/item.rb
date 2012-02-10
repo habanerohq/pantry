@@ -12,17 +12,17 @@ module Pantry
     
     def use
       klass.pantry ||= pantry
-      @existing = klass.where(id_values).joins(klass.id_joins)
+      @existing = apply_search(id_values, klass)
       @existing.any? ? send(pantry_options[:on_collision]) : save_model
     end
 
     def to_model
       result = klass.new(attributes)
-      foreign_values.each do |k, v|
+      foreign_values.symbolize_keys.each do |k, v|
         if v
           r = klass.reflect_on_association(k)
           f = foreign_class(r)
-          result.send "#{r.foreign_key}=", f.where(v).joins(f.foreign_joins).last.id
+          result.send "#{r.foreign_key}=", apply_search(v, f).last.id
         end
       end
       result
@@ -45,6 +45,28 @@ module Pantry
     end
     
   protected
+  
+    def apply_search(search, klass)
+      at = klass.arel_table
+      q = at.project(at['*'])
+      
+      q = gimme(search, klass, at, q)
+
+      klass.where(klass.primary_key.to_sym => ActiveRecord::Base.connection.execute(q.to_sql).map{|i| i[klass.primary_key]})
+    end
+    
+    def gimme(search, klass, at, q)
+      search.each do |k, v|
+        if klass.attribute_names.include?(k.to_s)
+          q = q.where(at[k.to_sym].eq(v))
+        elsif a = klass.association_for(k)
+          jt = Arel::Table.new(a.table_name).alias("#{a.table_name}_#{v.object_id}")
+          q = q.join(jt).on(at[a.foreign_key].eq(jt[klass.primary_key]))
+          q = gimme(v, a.klass, jt, q)
+        end
+      end
+      q
+    end
 
     def skip
       #do nothing
