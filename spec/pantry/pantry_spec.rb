@@ -1,14 +1,12 @@
 require 'spec_helper'
-require_relative '../../lib/pantry/base'
-require_relative '../../pantries/test_pantry'
 
 module TestPantries
   describe TestPantry do
     let(:subject) {TestPantry.new}
     let(:named) {PantryTest::Named.new(:name => 'Named', :value => 'Fred', :created_at =>  Time.now)}
-  
+
     context 'empty pantry' do
-      FileUtils.remove_dir("#{Rails.root}/data/pantries", true)      
+      FileUtils.remove_dir("#{Rails.root}/data/pantries", true)
       it 'creates a file with a default name in a default location' do
         subject.stack
         File.exists?("#{Rails.root}/data/pantries/test_pantry_1.pantry").should == true
@@ -18,8 +16,8 @@ module TestPantries
         subject.use
       end
     end
-    
-    context 'stacking' do    
+
+    context 'stacking' do
       context 'with a single, simple resource' do
         before(:each) do
           subject.can_stack PantryTest::Named
@@ -34,11 +32,11 @@ module TestPantries
         end
 
         it 'has a stackable that answers its id_values' do
-          named.id_values.should == {:name => 'Named'}  
+          named.id_values.should == {:name => 'Named'}
         end
 
         it 'has a stackable that answers its id_value' do
-          named.id_value.should == 'Named'  
+          named.id_value.should == 'Named'
         end
 
         it "knows a pantry record's class" do
@@ -57,7 +55,7 @@ module TestPantries
         end
 
         it "an item's pantry is it's enclosing pantry" do
-          p = named.to_pantry  
+          p = named.to_pantry
           p.pantry.should == subject
         end
       end
@@ -90,7 +88,7 @@ module TestPantries
           x.id_values.should == {:name => 'Named'}
           y.id_values.should == {:descriptor => 'Described'}
         end
-    
+
         it 'creates a file with a default name in a default location' do
           named.save!
           described.save!
@@ -301,7 +299,7 @@ module TestPantries
         end
 
         it 'has a stackable that answers its id_values' do
-          described.id_values.should == {:descriptor => 'Fresh', :value => 'Coffee'}  
+          described.id_values.should == {:descriptor => 'Fresh', :value => 'Coffee'}
         end
 
         it 'has a stackable that answers its id_value' do
@@ -310,7 +308,7 @@ module TestPantries
 
         it "knows a pantry record's id_value" do
           p = described.to_pantry
-          p.id_values.should == {:descriptor => 'Fresh', :value => 'Coffee'}  
+          p.id_values.should == {:descriptor => 'Fresh', :value => 'Coffee'}
         end
 
         it 'stacks & uses correctly' do
@@ -336,7 +334,7 @@ module TestPantries
         it "knows a pantry record's id_values" do
           valued.id_value_method_names.should == [:discriminator, :value]
           p = valued.to_pantry
-          p.id_values.should == {:discriminator => 'Toxic', :value => 'Tomatoes'}  
+          p.id_values.should == {:discriminator => 'Toxic', :value => 'Tomatoes'}
         end
       end
     end

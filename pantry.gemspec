@@ -11,8 +11,7 @@ Gem::Specification.new do |s|
   s.authors = ["Mark Ratjens"]
   s.email = ["mark@habanerohq.com"]
   s.homepage = "http://www.habanerohq.com"
-  s.summary = %q{}
-  s.description = %q{}
+  s.summary = %q{A database unload/reload tool with smarts.}
 
   s.files = `git ls-files`.split("\n")
   s.test_files = `git ls-files -- {test,spec,features}/*`.split("\n")
@@ -21,6 +20,9 @@ Gem::Specification.new do |s|
 
   # add_dependency for rails stuff, probably ActiveRecord
 
+  #s.add_development_dependency 'activesupport', '3.1.1'
+  s.add_development_dependency 'activerecord', '3.1.1'
+  s.add_development_dependency 'sqlite3'
+  s.add_development_dependency 'json'
   s.add_development_dependency 'rspec', '~> 2.7'
-  s.add_development_dependency 'rspec-rails'
 end

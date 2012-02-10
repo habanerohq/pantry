@@ -1,18 +1,18 @@
-require_relative 'record'
-require_relative 'base'
 module Pantry
   class Item
-    attr_accessor :class_name, :id_values, :attributes, :foreign_values
+    attr_accessor :class_name, :id_values, :attributes, :foreign_values, :pantry
     
-    def initialize(class_name, id_values, attributes, foreign_values)
+    def initialize(class_name, id_values, attributes, foreign_values, pantry = nil)
       @class_name = class_name
       @id_values = id_values.symbolize_keys
-      @attributes = attributes.symbolize_keys
+      @attributes = attributes.dup.compact.symbolize_keys
       @foreign_values = foreign_values.symbolize_keys
+      @pantry = pantry 
     end
     
     def use
-      @existing = klass.where(id_values)
+      klass.pantry ||= pantry
+      @existing = klass.where(id_values).joins(klass.id_joins)
       @existing.any? ? send(pantry_options[:on_collision]) : save_model
     end
 
@@ -22,7 +22,7 @@ module Pantry
         if v
           r = klass.reflect_on_association(k)
           f = foreign_class(r)
-          result.send "#{r.foreign_key}=", f.where(v).last.id
+          result.send "#{r.foreign_key}=", f.where(v).joins(f.foreign_joins).last.id
         end
       end
       result
@@ -30,10 +30,6 @@ module Pantry
     
     def klass
       class_name.constantize
-    end
-    
-    def pantry
-      klass.pantry
     end
     
     def pantry_options
@@ -48,8 +44,8 @@ module Pantry
       end
     end
     
-    protected
-    
+  protected
+
     def skip
       #do nothing
     end
