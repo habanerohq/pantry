@@ -1,7 +1,7 @@
 module Pantry
   class Item
     attr_accessor :class_name, :id_values, :attributes, :foreign_values, :pantry
-    
+
     def initialize(class_name, id_values, attributes, foreign_values, pantry = nil)
       @class_name = class_name
       @id_values = id_values.symbolize_keys
@@ -9,7 +9,7 @@ module Pantry
       @foreign_values = foreign_values.symbolize_keys
       @pantry = pantry 
     end
-    
+
     def use
       klass.pantry ||= pantry
       @existing = apply_search(id_values, klass)
@@ -27,15 +27,15 @@ module Pantry
       end
       result
     end
-    
+
     def klass
       class_name.constantize
     end
-    
+
     def pantry_options
       pantry.options_for(klass)
     end
-    
+
     def foreign_class(reflection)
       if reflection.options[:polymorphic]
         attributes[:"#{reflection.name}_type"].constantize
@@ -43,18 +43,18 @@ module Pantry
         reflection.klass
       end
     end
-    
+
   protected
-  
+
     def apply_search(search, klass)
       at = klass.arel_table
       q = at.project(at['*'])
-      
+
       q = gimme(search, klass, at, q)
 
       klass.where(klass.primary_key.to_sym => ActiveRecord::Base.connection.execute(q.to_sql).map{ |i| i[klass.primary_key].to_i })
     end
-    
+
     def gimme(search, klass, at, q)
       search.each do |k, v|
         if klass.attribute_names.include?(k.to_s)
@@ -71,7 +71,7 @@ module Pantry
     def skip
       #do nothing
     end
-    
+
     def replace
       o = @existing.last
       o.attributes = to_model.attributes
