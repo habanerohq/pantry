@@ -49,10 +49,9 @@ module Pantry
     def apply_search(search, klass)
       at = klass.arel_table
       q = at.project(at['*'])
-
       q = gimme(search, klass, at, q)
 
-      klass.where(klass.primary_key.to_sym => ActiveRecord::Base.connection.execute(q.to_sql).map{ |i| i[klass.primary_key].to_i })
+      klass.find_by_sql(q.to_sql)
     end
 
     def gimme(search, klass, at, q)
