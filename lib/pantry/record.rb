@@ -1,3 +1,4 @@
+require 'habanero/reflection'
 module Pantry
   module Record
     extend ActiveSupport::Concern
@@ -28,12 +29,12 @@ module Pantry
       def id_value_method_names
         self.class.id_value_method_names
       end
-    
+=begin    
       def id_value
         id_values.values.join(' ')
       end
+=end
     end
-
     module ClassMethods
       attr_accessor :pantry
 

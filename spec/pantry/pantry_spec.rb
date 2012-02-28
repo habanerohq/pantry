@@ -35,10 +35,6 @@ module TestPantries
           named.id_values.should == {:name => 'Named'}
         end
 
-        it 'has a stackable that answers its id_value' do
-          named.id_value.should == 'Named'
-        end
-
         it "knows a pantry record's class" do
           p = named.to_pantry
           p.klass.name.should == 'PantryTest::Named'
@@ -52,11 +48,6 @@ module TestPantries
         it "knows a pantry record's id_value" do
           p = named.to_pantry
           p.id_values.should == {:name => 'Named'}
-        end
-
-        it "an item's pantry is it's enclosing pantry" do
-          p = named.to_pantry
-          p.pantry.should == subject
         end
       end
 
@@ -94,6 +85,8 @@ module TestPantries
           described.save!
           subject.stack
           File.exists?("#{Rails.root}/data/pantries/test_pantry_2.pantry").should == true
+          named.destroy
+          described.destroy
         end
       end
 
@@ -118,13 +111,14 @@ module TestPantries
         it 'produces stackable data structures for each resource' do
           p = part.to_pantry
           p.attributes[:some_identifying_value].should == 'Some part'
-          p.foreign_values.should == {:whole  => {:some_identifying_value => "Some whole"}, :owner => nil}
+          p.foreign_values.should == {:whole => {:some_identifying_value => "Some whole"}}
         end
 
         it 'creates a file with a default name in a default location' do
           whole.save!
           subject.stack
           File.exists?("#{Rails.root}/data/pantries/test_pantry_3.pantry").should == true
+          whole.destroy
         end
       end
 
@@ -140,13 +134,14 @@ module TestPantries
         it 'produces stackable data structures for each resource' do
           w = whole.to_pantry
           w.attributes[:some_identifying_value].should == 'Some whole'
-          w.foreign_values.should == {:whole => nil, :owner => {:name=>"Named"}}
+          w.foreign_values.should == {:owner => {:name=>"Named"}}
         end
 
         it 'creates a file with a default name in a default location' do
           named.save!
           subject.stack
           File.exists?("#{Rails.root}/data/pantries/test_pantry_4.pantry").should == true
+          named.destroy
         end
       end
     end
@@ -174,13 +169,17 @@ module TestPantries
           subject.can_stack PantryTest::Composite, :id_value_methods => :some_identifying_value
         end
 
+        after(:each) do
+          whole.destroy
+        end
+
         it 'can use what it stacks' do
           w = PantryTest::Composite.find_by_some_identifying_value('Some whole')
           p = w.parts.first
           pan = p.to_pantry
           pan.attributes[:whole_id] = nil
           ar = pan.to_model
-          ar.whole_id.should == p.whole_id
+          ar.some_identifying_value.should == p.some_identifying_value
         end
       end
 
@@ -193,6 +192,11 @@ module TestPantries
           named.save!
           subject.can_stack PantryTest::Named
           subject.can_stack PantryTest::Composite, :id_value_methods => :some_identifying_value
+        end
+
+        after(:each) do
+          whole.destroy
+          named.destroy
         end
 
         it 'can use what it stacks' do
@@ -218,17 +222,23 @@ module TestPantries
           subject.can_stack PantryTest::Composite, :id_value_methods => :some_identifying_value
         end
 
+        after(:each) do
+          whole.destroy
+          named.destroy
+        end
+
         it 'can use a file with a default name in a default location' do
+          whole.owner.should == named
           subject.stack
           PantryTest::Named.destroy_all
           PantryTest::Composite.destroy_all
           subject.use
           w = PantryTest::Composite.find_by_some_identifying_value('Some whole')
-          whole.id += 1
-          whole.owner_id += 1
-          named.id += 1
-          whole.should == w
-          named.should == w.owner
+          n = PantryTest::Named.find_by_name('Named')
+          w.should be_present
+          n.should be_present
+          w.owner.name.should == 'Named'
+          w.owner.value.should == 'Fred'
         end
 
         it 'skips items whose id_values are already present on the database' do
@@ -251,6 +261,11 @@ module TestPantries
           named.save!
           subject.can_stack PantryTest::Named, :on_collision => :replace
           subject.can_stack PantryTest::Composite, :id_value_methods => :some_identifying_value, :on_collision => :replace
+        end
+
+        after(:each) do
+          whole.destroy
+          named.destroy
         end
 
         it 'remembers on collision options' do
@@ -279,6 +294,11 @@ module TestPantries
         subject.can_stack PantryTest::Named, :scope => {:where => {:value => 'Bill'}}
       end
 
+      after(:each) do
+        named.destroy
+        named2.destroy
+      end
+
       it 'stacks objects only within scope' do
         subject.stack
         PantryTest::Named.destroy_all
@@ -302,10 +322,6 @@ module TestPantries
           described.id_values.should == {:descriptor => 'Fresh', :value => 'Coffee'}
         end
 
-        it 'has a stackable that answers its id_value' do
-          described.id_value.should == 'Fresh Coffee'
-        end
-
         it "knows a pantry record's id_value" do
           p = described.to_pantry
           p.id_values.should == {:descriptor => 'Fresh', :value => 'Coffee'}
@@ -321,6 +337,7 @@ module TestPantries
           d.count.should == 2
           d.first.value.should == 'Coffee'
           d.last.value.should == 'Meat'
+          described.destroy
         end
       end
 
