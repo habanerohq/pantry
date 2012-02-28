@@ -52,7 +52,7 @@ module Pantry
       
       q = gimme(search, klass, at, q)
 
-      klass.where(klass.primary_key.to_sym => ActiveRecord::Base.connection.execute(q.to_sql).map{|i| i[klass.primary_key]})
+      klass.where(klass.primary_key.to_sym => ActiveRecord::Base.connection.execute(q.to_sql).map{|i| i[klass.primary_key.to_i]})
     end
     
     def gimme(search, klass, at, q)
