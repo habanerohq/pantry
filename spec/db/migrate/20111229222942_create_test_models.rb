@@ -8,6 +8,8 @@ class CreateTestModels < ActiveRecord::Migration
     create_table :nameds, :force => true do |t|
       t.string   :name
       t.string   :value
+      t.integer  :lft
+      t.integer  :rgt
       t.timestamps
     end
     create_table :labelleds, :force => true do |t|

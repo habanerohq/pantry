@@ -6,7 +6,7 @@ module Pantry
 
     module InstanceMethods
       def to_pantry
-        Pantry::Item.new(self.class.name, id_values, attributes, foreign_values)
+        Pantry::Item.new(self.class.name, id_values, select_attributes, foreign_values)
       end
 
       def id_values
@@ -16,6 +16,10 @@ module Pantry
             o[i] = (association_for(i) ? v.id_values : v)
           end
         end
+      end
+      
+      def select_attributes
+        attributes.delete_if { |k, v| self.class.protected_attributes.include?(k.to_sym)}
       end
       
       def foreign_values
@@ -29,12 +33,8 @@ module Pantry
       def id_value_method_names
         self.class.id_value_method_names
       end
-=begin    
-      def id_value
-        id_values.values.join(' ')
-      end
-=end
     end
+
     module ClassMethods
       attr_accessor :pantry
 
@@ -71,6 +71,10 @@ module Pantry
       def id_value_method_names_from_uniqueness_validator
         uv = validators.detect{|v| v.class == ActiveRecord::Validations::UniquenessValidator}
         [uv.options[:scope], uv.attributes].flatten.compact if uv
+      end
+      
+      def protected_attributes
+        [:lft, :rgt]
       end
     end
   end

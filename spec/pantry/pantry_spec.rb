@@ -3,7 +3,7 @@ require 'spec_helper'
 module TestPantries
   describe TestPantry do
     let(:subject) {TestPantry.new}
-    let(:named) {PantryTest::Named.new(:name => 'Named', :value => 'Fred', :created_at =>  Time.now)}
+    let(:named) {PantryTest::Named.new(:name => 'Named', :value => 'Fred', :created_at =>  Time.now, :lft => 1, :rgt => 13)}
 
     context 'when the pantry is empty' do
       FileUtils.remove_dir("#{Rails.root}/data/pantries", true)
@@ -43,6 +43,13 @@ module TestPantries
         it "knows a pantry record's attributes" do
           p = named.to_pantry
           p.attributes[:name].should == 'Named'
+        end
+
+        it "does not stack protected attributes" do
+          p = named.to_pantry
+          named.class.protected_attributes.each do |pa|
+            p.attributes[pa].should_not be_present
+          end
         end
 
         it "knows a pantry record's id_value" do
@@ -152,7 +159,7 @@ module TestPantries
           subject.can_stack PantryTest::Named
           p = named.to_pantry
           ar = p.to_model
-          ar.attributes.should == named.attributes
+          ar.select_attributes.should == named.select_attributes
         end
       end
 
