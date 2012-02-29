@@ -1,3 +1,4 @@
+require 'pantry/exception'
 module Pantry
   class Base
     def can_stack(*args)
@@ -46,6 +47,7 @@ module Pantry
   
     def use
       fn = generation_name
+
       begin
         File.open(fn, 'r').each(record_separator) do |l|
           j = JSON.parse(l).symbolize_keys
@@ -54,6 +56,28 @@ module Pantry
       rescue Errno::ENOENT => e
         puts "ERROR: Pantry#use ---> #{e}"
       end
+
+      use_exceptionals
+    end
+    
+    def use_exceptionals
+      unless @exceptionals.blank?
+        exception_level ||= 0
+        if exception_level < 3
+          exception_level += 1
+          xs = @exceptionals.dup
+          @exceptionals = [] # clear for reuse in recursive call
+          xs.each(&:use)
+          use_exceptionals
+        else
+          raise Pantry::Exception,
+            "-- Cannot use deferred records because we have reached exception level #{exception_level}. These records were not used: #{@exceptionals.map { |x| "#{x.class_name} #{x.id_values.inspect}"}.join('; ')}."
+        end
+      end
+    end
+    
+    def log_exceptional(item)
+      (@exceptionals ||= []) << item
     end
     
     def path

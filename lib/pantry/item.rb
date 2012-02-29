@@ -1,3 +1,4 @@
+require 'pantry/exception'
 module Pantry
   class Item
     attr_accessor :class_name, :id_values, :attributes, :foreign_values, :pantry
@@ -13,7 +14,11 @@ module Pantry
     def use
       klass.pantry ||= pantry
       @existing = apply_search(id_values, klass)
-      @existing.any? ? send(pantry_options[:on_collision]) : save_model
+      begin
+        @existing.any? ? send(pantry_options[:on_collision]) : save_model
+      rescue Pantry::Exception => e
+        puts e.message
+      end
     end
 
     def to_model
@@ -21,8 +26,15 @@ module Pantry
       foreign_values.symbolize_keys.each do |k, v|
         if v
           r = klass.reflect_on_association(k)
-          f = foreign_class(r)
-          result.send "#{r.foreign_key}=", apply_search(v, f).last.id
+          f_class = foreign_class(r)
+          f_objects = apply_search(v, f_class)
+          if f_objects.any?
+            result.send "#{r.foreign_key}=", f_objects.last.id
+          else
+            pantry.log_exceptional(self)
+            raise Pantry::Exception,
+              "-- No database record found for #{f_class} #{k}[#{v.inspect}] when using #{result.class.name} #{result.id_values.inspect} ... deferring load for a subsequent pass."
+          end
         end
       end
       result

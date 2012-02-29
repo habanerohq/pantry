@@ -5,7 +5,7 @@ module TestPantries
     let(:subject) {TestPantry.new}
     let(:named) {PantryTest::Named.new(:name => 'Named', :value => 'Fred', :created_at =>  Time.now)}
 
-    context 'empty pantry' do
+    context 'when the pantry is empty' do
       FileUtils.remove_dir("#{Rails.root}/data/pantries", true)
       it 'creates a file with a default name in a default location' do
         subject.stack
@@ -17,7 +17,7 @@ module TestPantries
       end
     end
 
-    context 'stacking' do
+    context 'while stacking the pantry' do
       context 'with a single, simple resource' do
         before(:each) do
           subject.can_stack PantryTest::Named
@@ -146,13 +146,10 @@ module TestPantries
       end
     end
 
-    context 'using' do
+    context 'while using the pantry' do
       context 'with a single, simple resource' do
-        before(:each) do
-          subject.can_stack PantryTest::Named
-        end
-
         it 'can use what it stacks' do
+          subject.can_stack PantryTest::Named
           p = named.to_pantry
           ar = p.to_model
           ar.attributes.should == named.attributes
@@ -195,8 +192,8 @@ module TestPantries
         end
 
         after(:each) do
-          whole.destroy
-          named.destroy
+          PantryTest::Named.destroy_all
+          PantryTest::Composite.destroy_all
         end
 
         it 'can use what it stacks' do
@@ -207,25 +204,6 @@ module TestPantries
           ar = p.to_model
           ar.owner_id.should == w.owner_id
         end
-      end
-    end
-
-    context 'using' do
-      context 'with two resources, associated polymorphically' do
-        let(:whole) {PantryTest::Composite.new(:some_identifying_value => 'Some whole')}
-
-        before(:each) do
-          whole.owner = named
-          whole.save!
-          named.save!
-          subject.can_stack PantryTest::Named
-          subject.can_stack PantryTest::Composite, :id_value_methods => :some_identifying_value
-        end
-
-        after(:each) do
-          whole.destroy
-          named.destroy
-        end
 
         it 'can use a file with a default name in a default location' do
           whole.owner.should == named
@@ -235,8 +213,6 @@ module TestPantries
           subject.use
           w = PantryTest::Composite.find_by_some_identifying_value('Some whole')
           n = PantryTest::Named.find_by_name('Named')
-          w.should be_present
-          n.should be_present
           w.owner.name.should == 'Named'
           w.owner.value.should == 'Fred'
         end
@@ -249,9 +225,40 @@ module TestPantries
           named.should == w.owner
         end
       end
+
+      context 'with records stacked out of order' do
+        let(:whole) {PantryTest::Composite.new(:some_identifying_value => 'Some whole')}
+
+        before(:each) do
+          whole.owner = named
+          whole.save!
+          named.save!
+          subject.can_stack PantryTest::Composite, :id_value_methods => :some_identifying_value
+          subject.can_stack PantryTest::Named
+        end
+
+        after(:each) do
+          PantryTest::Named.destroy_all
+          PantryTest::Composite.destroy_all
+        end
+
+        it 'can use what it stacks' do
+          whole.owner.should == named
+          subject.stack
+          PantryTest::Named.destroy_all
+          PantryTest::Composite.destroy_all
+          subject.use
+          w = PantryTest::Composite.find_by_some_identifying_value('Some whole')
+          n = PantryTest::Named.find_by_name('Named')
+          w.should be_present
+          n.should be_present
+          w.owner.name.should == 'Named'
+          w.owner.value.should == 'Fred'
+        end
+      end
     end
 
-    context 'on collision' do
+    context 'when there is a value_id collision' do
       context 'with two resources, associated polymorphically' do
         let(:whole) {PantryTest::Composite.new(:some_identifying_value => 'Some whole')}
 
