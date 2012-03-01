@@ -4,35 +4,33 @@ module Pantry
     extend ActiveSupport::Concern
     include Habanero::Reflection
 
-    module InstanceMethods
-      def to_pantry
-        Pantry::Item.new(self.class.name, id_values, select_attributes, foreign_values)
-      end
+    def to_pantry
+      Pantry::Item.new(self.class.name, id_values, select_attributes, foreign_values)
+    end
 
-      def id_values
-        id_value_method_names.
-        each_with_object({}) do |i, o| 
-          if v = self.send(i)
-            o[i] = (association_for(i) ? v.id_values : v)
-          end
+    def id_values
+      id_value_method_names.
+      each_with_object({}) do |i, o| 
+        if v = self.send(i)
+          o[i] = (association_for(i) ? v.id_values : v)
         end
       end
-      
-      def select_attributes
-        attributes.delete_if { |k, v| self.class.protected_attributes.include?(k.to_sym)}
+    end
+    
+    def select_attributes
+      attributes.delete_if { |k, v| self.class.protected_attributes.include?(k.to_sym)}
+    end
+    
+    def foreign_values
+      self.class.reflect_on_all_associations(:belongs_to).
+      each_with_object({}) do |a, o|
+        ao = send a.name
+        o[a.name] = ao.id_values if ao
       end
-      
-      def foreign_values
-        self.class.reflect_on_all_associations(:belongs_to).
-        each_with_object({}) do |a, o|
-          ao = send a.name
-          o[a.name] = ao.id_values if ao
-        end
-      end
+    end
 
-      def id_value_method_names
-        self.class.id_value_method_names
-      end
+    def id_value_method_names
+      self.class.id_value_method_names
     end
 
     module ClassMethods
