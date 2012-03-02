@@ -1,6 +1,9 @@
 require 'pantry/exception'
+require 'pp'
+
 module Pantry
   class Base
+    
     def can_stack(*args)
       if args.last.is_a?(Hash)
         make_stackable(args.first)
@@ -34,6 +37,7 @@ module Pantry
     end
     
     def stack
+      define_stacks
       fn = next_generation
       FileUtils.mkpath(path)
       File.open(fn, 'wb') do |f|
@@ -62,16 +66,18 @@ module Pantry
     
     def use_exceptionals
       unless @exceptionals.blank?
-        exception_level ||= 0
-        if exception_level < 3
-          exception_level += 1
+        @exception_level ||= 0
+        if @exception_level < 3
+          @exception_level += 1
+          puts "++ Using exception level #{@exception_level}"
           xs = @exceptionals.dup
           @exceptionals = [] # clear for reuse in recursive call
           xs.each(&:use)
           use_exceptionals
         else
           raise Pantry::Exception,
-            "-- Cannot use deferred records because we have reached exception level #{exception_level}. These records were not used: #{@exceptionals.map { |x| "#{x.class_name} #{x.id_values.inspect}"}.join('; ')}."
+            "-- Cannot use deferred records because we have reached exception level #{@exception_level}. These records were not used:"
+            pp @exceptionals.map { |x| "#{x.class_name} #{x.id_values.inspect}" }
         end
       end
     end
@@ -86,15 +92,16 @@ module Pantry
     
     protected
     
-    def make_stackable(sym)
-      klass = "#{sym}".classify.constantize
+    def make_stackable(class_name)
+      klass = "#{class_name}".classify.constantize
       klass.send :include, Pantry::Record
       (klass.descendants << klass).each do |k|
         k.pantry = self
       end
     end
 
-    def candidates(klass)
+    def candidates(class_name)
+      klass = "#{class_name}".classify.constantize
       s = options_for(klass)[:scope]
       s ? s.inject(klass){|m, i| m.send(*i)} : klass.all
     end

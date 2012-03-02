@@ -12,6 +12,8 @@ module Pantry
     end
 
     def use
+      puts "++ #{klass.name} #{id_values.inspect}"
+      klass.send(:include, Pantry::Record) unless klass.descendants.include?(Pantry::Record) 
       klass.pantry ||= pantry
       @existing = apply_search(id_values, klass)
       begin
@@ -22,7 +24,13 @@ module Pantry
     end
 
     def to_model
-      result = klass.new(attributes)
+      begin
+        result = klass.new(attributes)
+      rescue ActiveRecord::UnknownAttributeError, ActiveModel::MissingAttributeError => e
+        pantry.log_exceptional(self)
+        raise Pantry::Exception,
+          "-- #{e.message} when using #{klass.name} #{id_values.inspect} ... deferring load for a subsequent pass."
+      end
       foreign_values.symbolize_keys.each do |k, v|
         if v
           r = klass.reflect_on_association(k)
@@ -70,7 +78,7 @@ module Pantry
       search.each do |k, v|
         if klass.attribute_names.include?(k.to_s)
           q = q.where(at[k.to_sym].eq(v))
-        elsif a = klass.association_for(k)
+        elsif a = klass.reflect_on_association(k)
           jt = Arel::Table.new(a.table_name).alias("#{a.table_name}_#{v.object_id}")
           q = q.join(jt).on(at[a.foreign_key].eq(jt[klass.primary_key]))
           q = gimme(v, a.klass, jt, q)
