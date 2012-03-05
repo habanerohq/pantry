@@ -288,14 +288,44 @@ module TestPantries
           subject.options_for(PantryTest::Composite).should == {:id_value_methods => :some_identifying_value, :on_collision => :replace}
         end
 
-        it 'replaces duplicate when :on_collision option is :replace' do
+        it 'replaces duplicates when :on_collision option is :replace' do
           whole_updated_at = whole.updated_at
-          named_updated_at = named.updated_at
           subject.stack
+          named.update_attributes(:value => 'Barny')
           subject.use
           w = PantryTest::Composite.find_by_some_identifying_value('Some whole')
           w.updated_at.should_not == whole_updated_at
-          w.owner.updated_at.should_not == named_updated_at
+          w.owner.value.should == 'Fred'
+        end
+      end
+    end
+
+    context 'when there is a value_id collision and a force option' do
+      context 'with two resources, associated polymorphically' do
+        let(:whole) {PantryTest::Composite.new(:some_identifying_value => 'Some whole')}
+
+        before(:each) do
+          whole.owner = named
+          whole.save!
+          named.save!
+          subject.can_stack 'PantryTest::Named'
+          subject.can_stack 'PantryTest::Composite', :id_value_methods => :some_identifying_value
+        end
+
+        after(:each) do
+          whole.destroy
+          named.destroy
+        end
+
+        it 'replaces duplicates when :force option is :replace' do
+          subject.stack
+          named.update_attributes(:value => 'Barny')
+          subject.use
+          w = PantryTest::Composite.find_by_some_identifying_value('Some whole')
+          w.owner.value.should == 'Barny'
+          subject.use(:force => :replace)
+          w = PantryTest::Composite.find_by_some_identifying_value('Some whole')
+          w.owner.value.should == 'Fred'
         end
       end
     end

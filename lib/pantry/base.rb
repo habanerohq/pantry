@@ -49,13 +49,13 @@ module Pantry
       end
     end
   
-    def use
+    def use(*args)
       fn = generation_name
 
       begin
         File.open(fn, 'r').each(record_separator) do |l|
           j = JSON.parse(l).symbolize_keys
-          Pantry::Item.new(j[:class_name], j[:id_values], j[:attributes], j[:foreign_values], self).use
+          Pantry::Item.new(j[:class_name], j[:id_values], j[:attributes], j[:foreign_values], self).use(*args)
         end
       rescue Errno::ENOENT => e
         puts "ERROR: Pantry#use ---> #{e}"
