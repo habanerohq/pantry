@@ -33,7 +33,7 @@ module Pantry
     end
     
     def options_for(stackable)
-      {:on_collision => :skip}.merge(stackables_options.detect{ |s| stackable.ancestors.include?(s.first) }.try(:last) || {})
+      {:on_collision => :skip}.merge(stackables_options.detect{ |s| stackable.ancestors.map(&:name).include?(s.first) }.try(:last) || {})
     end
     
     def stack
@@ -70,14 +70,14 @@ module Pantry
         if @exception_level < 3
           @exception_level += 1
           puts "++ Using exception level #{@exception_level}"
-          xs = @exceptionals.dup
+          xs = @exceptionals.dup.uniq
           @exceptionals = [] # clear for reuse in recursive call
-          xs.each(&:use)
+          xs.each { |x| x.use(:force => :replace) }
           use_exceptionals
         else
           raise Pantry::Exception,
-            "-- Cannot use deferred records because we have reached exception level #{@exception_level}. These records were not used:"
-            pp @exceptionals.map { |x| "#{x.class_name} #{x.id_values.inspect}" }
+            "-- Cannot use deferred records because we have reached exception level #{@exception_level}. " <<
+            "#{@exceptionals.count} record(s) were not used:\n#{@exceptionals.map { |x| "#{x.class_name} #{x.id_values.inspect}"}.join"\n"}"
         end
       end
     end

@@ -11,13 +11,13 @@ module Pantry
       @pantry = pantry 
     end
 
-    def use
+    def use(options = {})
       puts "++ #{klass.name} #{id_values.inspect}"
       klass.send(:include, Pantry::Record) unless klass.descendants.include?(Pantry::Record) 
       klass.pantry ||= pantry
       @existing = apply_search(id_values, klass)
       begin
-        @existing.any? ? send(pantry_options[:on_collision]) : save_model
+        @existing.any? ? send(options[:force] || pantry_options[:on_collision]) : save_model
       rescue Pantry::Exception => e
         puts e.message
       end
@@ -39,9 +39,11 @@ module Pantry
           if f_objects.any?
             result.send "#{r.foreign_key}=", f_objects.last.id
           else
+            result.send "#{r.foreign_key}=", nil
             pantry.log_exceptional(self)
-            raise Pantry::Exception,
-              "-- No database record found for #{f_class} #{k}[#{v.inspect}] when using #{result.class.name} #{result.id_values.inspect} ... deferring load for a subsequent pass."
+# => TODO: we may still need this stragey in future ... need to configure for it for each stackable
+#            raise Pantry::Exception,
+#              "-- No database record found for #{f_class} #{k}[#{v.inspect}] when using #{result.class.name} #{v.inspect} ... deferring load for a subsequent pass."
           end
         end
       end

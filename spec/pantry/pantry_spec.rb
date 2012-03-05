@@ -20,11 +20,11 @@ module TestPantries
     context 'while stacking the pantry' do
       context 'with a single, simple resource' do
         before(:each) do
-          subject.can_stack PantryTest::Named
+          subject.can_stack 'PantryTest::Named'
         end
 
         it 'remembers what to stack' do
-          subject.stackables.should == [PantryTest::Named]
+          subject.stackables.should == ['PantryTest::Named']
         end
 
         it 'has a stackable with a default id_value_method_name' do
@@ -62,7 +62,7 @@ module TestPantries
         let(:described) {PantryTest::Described.new(:descriptor => 'Described')}
 
         before(:each) do
-          subject.can_stack PantryTest::Named, PantryTest::Described
+          subject.can_stack 'PantryTest::Named', 'PantryTest::Described'
         end
 
         it 'has a stackable that answers its id_value' do
@@ -74,7 +74,7 @@ module TestPantries
         end
 
         it 'remembers what to stack' do
-          subject.stackables.should == [PantryTest::Named, PantryTest::Described]
+          subject.stackables.should == ['PantryTest::Named', 'PantryTest::Described']
         end
 
         it 'produces stackable data structures for each resource' do
@@ -104,7 +104,7 @@ module TestPantries
         before(:each) do
           whole.parts << part
           part.whole = whole
-          subject.can_stack PantryTest::Composite, :id_value_methods => :some_identifying_value
+          subject.can_stack 'PantryTest::Composite', :id_value_methods => :some_identifying_value
         end
 
         it 'has a stackable with a specified id_value_method_name' do
@@ -118,6 +118,7 @@ module TestPantries
         it 'produces stackable data structures for each resource' do
           p = part.to_pantry
           p.attributes[:some_identifying_value].should == 'Some part'
+          p.id_values.should == {:some_identifying_value => 'Some part'} 
           p.foreign_values.should == {:whole => {:some_identifying_value => "Some whole"}}
         end
 
@@ -134,8 +135,8 @@ module TestPantries
 
         before(:each) do
           whole.owner = named
-          subject.can_stack PantryTest::Named
-          subject.can_stack PantryTest::Composite, :id_value_methods => :some_identifying_value
+          subject.can_stack 'PantryTest::Named'
+          subject.can_stack 'PantryTest::Composite', :id_value_methods => :some_identifying_value
         end
 
         it 'produces stackable data structures for each resource' do
@@ -156,7 +157,7 @@ module TestPantries
     context 'while using the pantry' do
       context 'with a single, simple resource' do
         it 'can use what it stacks' do
-          subject.can_stack PantryTest::Named
+          subject.can_stack 'PantryTest::Named'
           p = named.to_pantry
           ar = p.to_model
           ar.select_attributes.should == named.select_attributes
@@ -170,7 +171,7 @@ module TestPantries
         before(:each) do
           whole.parts << part
           whole.save!
-          subject.can_stack PantryTest::Composite, :id_value_methods => :some_identifying_value
+          subject.can_stack 'PantryTest::Composite', :id_value_methods => :some_identifying_value
         end
 
         after(:each) do
@@ -194,8 +195,8 @@ module TestPantries
           whole.owner = named
           whole.save!
           named.save!
-          subject.can_stack PantryTest::Named
-          subject.can_stack PantryTest::Composite, :id_value_methods => :some_identifying_value
+          subject.can_stack 'PantryTest::Named'
+          subject.can_stack 'PantryTest::Composite', :id_value_methods => :some_identifying_value
         end
 
         after(:each) do
@@ -240,8 +241,8 @@ module TestPantries
           whole.owner = named
           whole.save!
           named.save!
-          subject.can_stack PantryTest::Composite, :id_value_methods => :some_identifying_value
-          subject.can_stack PantryTest::Named
+          subject.can_stack 'PantryTest::Composite', :id_value_methods => :some_identifying_value
+          subject.can_stack 'PantryTest::Named'
         end
 
         after(:each) do
@@ -273,8 +274,8 @@ module TestPantries
           whole.owner = named
           whole.save!
           named.save!
-          subject.can_stack PantryTest::Named, :on_collision => :replace
-          subject.can_stack PantryTest::Composite, :id_value_methods => :some_identifying_value, :on_collision => :replace
+          subject.can_stack 'PantryTest::Named', :on_collision => :replace
+          subject.can_stack 'PantryTest::Composite', :id_value_methods => :some_identifying_value, :on_collision => :replace
         end
 
         after(:each) do
@@ -305,7 +306,7 @@ module TestPantries
       before(:each) do
         named.save!
         named2.save!
-        subject.can_stack PantryTest::Named, :scope => {:where => {:value => 'Bill'}}
+        subject.can_stack 'PantryTest::Named', :scope => {:where => {:value => 'Bill'}}
       end
 
       after(:each) do
@@ -329,7 +330,7 @@ module TestPantries
         let(:described) {PantryTest::Described.new(:descriptor => 'Fresh', :value => 'Coffee')}
 
         before(:each) do
-          subject.can_stack PantryTest::Described, :id_value_methods => [:descriptor, :value]
+          subject.can_stack 'PantryTest::Described', :id_value_methods => [:descriptor, :value]
         end
 
         it 'has a stackable that answers its id_values' do
@@ -359,7 +360,7 @@ module TestPantries
         let(:valued) {PantryTest::Valued.new(:discriminator => 'Toxic', :value => 'Tomatoes')}
 
         before(:each) do
-          subject.can_stack PantryTest::Valued
+          subject.can_stack 'PantryTest::Valued'
         end
 
         it "knows a pantry record's id_values" do
