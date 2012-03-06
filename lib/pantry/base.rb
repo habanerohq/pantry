@@ -3,7 +3,7 @@ require 'pp'
 
 module Pantry
   class Base
-    
+
     def can_stack(*args)
       if args.last.is_a?(Hash)
         make_stackable(args.first)
@@ -23,19 +23,19 @@ module Pantry
         args.each{|a| make_stackable(a)}
       end
     end
-    
+
     def stackables
       @stackables ||= []
     end
-    
+
     def stackables_options
       @stackables_options ||= {}
     end
-    
+
     def options_for(stackable)
       {:on_collision => :skip}.merge(stackables_options.detect{ |s| stackable.ancestors.map(&:name).include?(s.first) }.try(:last) || {})
     end
-    
+
     def stack
       define_stacks
       fn = next_generation
@@ -48,14 +48,15 @@ module Pantry
         end
       end
     end
-  
+
     def use(*args)
-      fn = generation_name
+      options = args.extract_options!
+      fn = options.delete(:file_name) || generation_name
 
       begin
         File.open(fn, 'r').each(record_separator) do |l|
           j = JSON.parse(l).symbolize_keys
-          Pantry::Item.new(j[:class_name], j[:id_values], j[:attributes], j[:foreign_values], self).use(*args)
+          Pantry::Item.new(j[:class_name], j[:id_values], j[:attributes], j[:foreign_values], self).use(options)
         end
       rescue Errno::ENOENT => e
         puts "ERROR: Pantry#use ---> #{e}"
@@ -63,7 +64,7 @@ module Pantry
 
       use_exceptionals
     end
-    
+
     def use_exceptionals
       unless @exceptionals.blank?
         @exception_level ||= 0
@@ -81,17 +82,17 @@ module Pantry
         end
       end
     end
-    
+
     def log_exceptional(item)
       (@exceptionals ||= []) << item
     end
-    
+
     def path
       Rails.root.join('data/pantries')
     end
-    
+
     protected
-    
+
     def make_stackable(class_name)
       klass = "#{class_name}".classify.constantize
       klass.send :include, Pantry::Record
@@ -105,25 +106,25 @@ module Pantry
       s = options_for(klass)[:scope]
       s ? s.inject(klass){|m, i| m.send(*i)} : klass.all
     end
-    
+
     def file_name(gen)
       "#{path}/#{self.class.name.underscore}_#{gen}.pantry"
     end
-    
+
     def next_generation
       file_name((generation_numbers.last || 0) + 1)
     end
-    
+
     def generation_name(i=0)
       i > 0 ? i : file_name(generation_numbers[i - 1])
     end
-    
+
     def generation_numbers
       Dir.glob("#{path}/#{self.class.name.underscore}*.pantry").map do |fn|
         fn.split('.').first.split('_').last.to_i
       end.sort
     end
-    
+
     def record_separator
       "\n"
     end

@@ -95,7 +95,7 @@ module Pantry
 
     def replace
       o = @existing.last
-      o.attributes = to_model.attributes
+      o.attributes = to_model.attributes.reject { |k, v| to_model.class.protected_attributes.include?(k.to_sym) }
       o.save!
     end
 
