@@ -1,7 +1,7 @@
 require 'pantry/exception'
 module Pantry
   class Item
-    attr_accessor :class_name, :id_values, :attributes, :foreign_values, :pantry
+    attr_accessor :class_name, :id_values, :attributes, :foreign_values, :pantry, :old_attributes
 
     def initialize(class_name, id_values, attributes, foreign_values, pantry = nil)
       @class_name = class_name
@@ -95,6 +95,14 @@ module Pantry
 
     def replace
       o = @existing.last
+
+      if old_attributes.present?
+        conflicts = o.attributes.reject { |k, v| !old_attributes.keys.include?(k) }.diff(old_attributes)
+        conflicts.each do |k, v|
+          puts "EXPECTING #{k} TO BE #{old_attributes[k]} BUT GOT #{v} ON #{o.inspect}"
+        end
+      end
+
       o.attributes = to_model.attributes.reject { |k, v| to_model.class.protected_attributes.include?(k.to_sym) }
       o.save!
     end

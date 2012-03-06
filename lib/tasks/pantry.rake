@@ -35,13 +35,20 @@ namespace :pantry do
         version, pantry = filepath.scan(/(\d+)_(.*?)\.pantry$/).first
 
         if version.to_i > versions.last.to_i
-          pantry.classify.constantize.new.use(:file_name => filepath)
+          pantry.classify.constantize.new.use :file_name => filepath, :force => :replace
 
           # record successful thing to db
           stmt = table.compile_insert table[:version] => version
           ActiveRecord::Base.connection.insert stmt
         end
       end
+    end
+
+    task :clear => :environment do
+      table = Arel::Table.new(:cellar_migrations)
+
+      stmt = table.project(table[:version]).compile_delete
+      ActiveRecord::Base.connection.delete stmt
     end
   end
 end
