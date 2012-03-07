@@ -1,6 +1,6 @@
 module Pantry
   class CellarItem < ActiveRecord::Base
-    belongs_to :record
+    belongs_to :record, :polymorphic => true
     scope :unstacked, where(:stacked_at => nil).order(:created_at)
 
     def to_pantry_item
