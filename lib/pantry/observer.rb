@@ -5,7 +5,7 @@ class Pantry::Observer < ActiveRecord::Observer
     Pantry::CellarItem.create!(
       :record => record,
       :item => record.to_pantry.to_json,
-      :pantry_type => 'SorbetPantry'
+      :pantry_type => record.pantry.class.name
     )
   end
 
@@ -18,7 +18,7 @@ class Pantry::Observer < ActiveRecord::Observer
     Pantry::CellarItem.create!(
       :record => record,
       :item => pantry_item.to_json,
-      :pantry_type => 'SorbetPantry'
+      :pantry_type => record.pantry.class.name
     )
   end
 

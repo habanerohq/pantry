@@ -33,6 +33,10 @@ module Pantry
       self.class.id_value_method_names
     end
 
+    def pantry
+      self.class.pantry
+    end
+
     module ClassMethods
       attr_accessor :pantry
 
