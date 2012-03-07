@@ -17,7 +17,9 @@ module Pantry
       klass.pantry ||= pantry
       @existing = apply_search(id_values, klass)
       begin
-        @existing.any? ? send(options[:force] || pantry_options[:on_collision]) : save_model
+        ActiveRecord::Base.observers.disable :all do
+          @existing.any? ? send(options[:force] || pantry_options[:on_collision]) : save_model
+        end
       rescue Pantry::Exception => e
         puts e.message
       end
