@@ -82,7 +82,7 @@ module Pantry
       search.each do |k, v|
         if klass.attribute_names.include?(k.to_s)
           q = q.where(at[k.to_sym].eq(v))
-        elsif a = klass.reflect_on_association(k)
+        elsif a = klass.reflect_on_association(k.to_sym)
           jt = Arel::Table.new(a.table_name).alias("#{a.table_name}_#{v.object_id}")
           q = q.join(jt).on(at[a.foreign_key].eq(jt[klass.primary_key]))
           q = gimme(v, a.klass, jt, q)
