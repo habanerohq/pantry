@@ -23,10 +23,14 @@ module Pantry
       id_value_method_names.
       each_with_object({}) do |i, o| 
         if v = self.send(i)
-          o[i] = if association_for(i) 
-            v.id_values
+          o[i] = if a = association_for(i)
+            if old_key = changes[a.foreign_key].try(:first)
+              a.klass.find(old_key).id_values
+            else
+              v.id_values
+            end
           else
-            changes[i].try(:first) || v # to handle renamed id_values in cellars
+            changes[i].try(:first) || v
           end
         end
       end
