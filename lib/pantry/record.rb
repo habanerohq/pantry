@@ -12,7 +12,11 @@ module Pantry
       id_value_method_names.
       each_with_object({}) do |i, o| 
         if v = self.send(i)
-          o[i] = (association_for(i) ? v.id_values : v)
+          o[i] = if association_for(i) 
+            v.id_values
+          else
+            changes[i].try(:first) || v # to handle renamed id_values in cellars
+          end
         end
       end
     end

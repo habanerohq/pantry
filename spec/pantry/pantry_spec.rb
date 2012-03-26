@@ -56,6 +56,14 @@ module TestPantries
           p = named.to_pantry
           p.id_values.should == {:name => 'Named'}
         end
+
+        it 'retains old values for id_value when id_value components are changed, so that renames do not create duplicates when the record is used' do
+          named.save!
+          named.name = 'New Name'
+          p = named.to_pantry
+          p.id_values.should == {:name => 'Named'}
+          named.destroy
+        end
       end
 
       context 'with multiple, simple resources' do
