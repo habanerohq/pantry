@@ -1,10 +1,11 @@
 require 'pantry/exception'
 module Pantry
   class Item
-    attr_accessor :class_name, :id_values, :attributes, :foreign_values, :pantry, :old_attributes
+    attr_accessor :class_name, :action, :id_values, :attributes, :foreign_values, :pantry, :old_attributes
 
-    def initialize(class_name, id_values, attributes, foreign_values, pantry = nil)
+    def initialize(class_name, action, id_values, attributes, foreign_values, pantry = nil)
       @class_name = class_name
+      @action = action
       @id_values = id_values.symbolize_keys
       @attributes = attributes.dup.compact.symbolize_keys
       @foreign_values = foreign_values.symbolize_keys
@@ -18,7 +19,15 @@ module Pantry
       @existing = apply_search(id_values, klass)
       begin
         ActiveRecord::Base.observers.disable :all do
-          @existing.any? ? send(options[:force] || pantry_options[:on_collision]) : save_model
+          if @existing.any? 
+            if action == 'destroy'
+              destroy_model
+            else
+              send(options[:force] || pantry_options[:on_collision])
+            end
+          else
+            save_model
+          end
         end
       rescue Pantry::Exception => e
         puts e.message
@@ -96,6 +105,7 @@ module Pantry
     end
 
     def replace
+      # todo: @existing should never have more than one element. what do we do if it has?
       o = @existing.last
 
       if old_attributes.present?
@@ -111,6 +121,11 @@ module Pantry
 
     def save_model
       to_model.save!
+    end
+    
+    def destroy_model
+      # todo: @existing should never have more than one element. what do we do if it has?
+      @existing.last.destroy
     end
   end
 end

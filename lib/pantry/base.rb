@@ -56,7 +56,7 @@ module Pantry
       begin
         File.open(fn, 'r').each(record_separator) do |l|
           j = JSON.parse(l).symbolize_keys
-          item = Pantry::Item.new(j[:class_name], j[:id_values], j[:attributes], j[:foreign_values], self)
+          item = Pantry::Item.new(j[:class_name], j[:action], j[:id_values], j[:attributes], j[:foreign_values], self)
           item.old_attributes = j[:old_attributes]
           item.use(options)
         end

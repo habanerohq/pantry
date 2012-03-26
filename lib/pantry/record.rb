@@ -5,7 +5,18 @@ module Pantry
     include Habanero::Reflection
 
     def to_pantry
-      Pantry::Item.new(self.class.name, id_values, select_attributes, foreign_values)
+      Pantry::Item.new(self.class.name, action, id_values, select_attributes, foreign_values)
+    end
+    
+    def action
+      case
+      when new_record?
+        'new'
+      when destroyed?
+        'destroy'
+      when persisted?
+        'update'
+      end
     end
 
     def id_values
@@ -22,7 +33,7 @@ module Pantry
     end
     
     def select_attributes
-      attributes.delete_if { |k, v| self.class.protected_attributes.include?(k.to_sym)}
+      attributes.delete_if { |k, v| self.class.protected_attributes.include?(k.to_sym) }
     end
     
     def foreign_values

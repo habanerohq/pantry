@@ -40,6 +40,18 @@ module TestPantries
           p.klass.name.should == 'PantryTest::Named'
         end
 
+        it "knows a new pantry record's update action" do
+          p = named.to_pantry
+          p.action.should == 'new'
+        end
+
+        it "knows an existing pantry record's update action" do
+          named.save!
+          p = named.to_pantry
+          p.action.should == 'update'
+          named.destroy
+        end
+
         it "knows a pantry record's attributes" do
           p = named.to_pantry
           p.attributes[:name].should == 'Named'
@@ -63,6 +75,14 @@ module TestPantries
           p = named.to_pantry
           p.id_values.should == {:name => 'Named'}
           named.destroy
+        end
+
+        it 'stacks a destroyed record correctly' do
+          named.save!
+          named.destroy
+          p = named.to_pantry
+          p.id_values.should == {:name => 'Named'}
+          p.action.should == 'destroy'
         end
       end
 
@@ -193,6 +213,15 @@ module TestPantries
           pan.attributes[:whole_id] = nil
           ar = pan.to_model
           ar.some_identifying_value.should == p.some_identifying_value
+        end
+        
+        it 'can destroy an object' do
+          whole.destroy
+          p = whole.to_pantry
+          p.action.should == 'destroy'
+          PantryTest::Composite.create(:some_identifying_value => 'Some whole')
+          p.use
+          PantryTest::Composite.find_by_some_identifying_value('Some whole').should == nil
         end
       end
 
