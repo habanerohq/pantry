@@ -116,11 +116,18 @@ module Pantry
       end
 
       o.attributes = to_model.attributes.reject { |k, v| to_model.class.protected_attributes.include?(k.to_sym) }
-      o.save!
+      save_it(o)
     end
 
     def save_model
-      to_model.save!
+      save_it(to_model)
+    end
+
+    def save_it(a_record)
+      unless a_record.save
+        raise Pantry::Exception,
+          "-- #{a_record.errors.messages.inspect} when using #{klass.name} #{id_values.inspect}. Cannot use the record."
+      end
     end
     
     def destroy_model
