@@ -14,17 +14,19 @@ class Pantry::Observer < ActiveRecord::Observer
   protected  
 
   def after_anything(record, action = nil)
-    define_stacks unless record.respond_to?(:to_pantry)
+    define_stacks unless record.respond_to?(:to_pantry) # attempt to include cellaring instructions in the record's class
 
-    pantry_item = record.to_pantry
+    if record.respond_to?(:to_pantry) # i.e there are no instructions for how to log this record as a cellar item
+      pantry_item = record.to_pantry
     
-    pantry_item.old_attributes = record.changes.inject({}) { |memo, (k, v)| memo.merge(k => v.first) } unless action == :create
+      pantry_item.old_attributes = record.changes.inject({}) { |memo, (k, v)| memo.merge(k => v.first) } unless action == :create
 
-    Pantry::CellarItem.create!(
-      :record => record,
-      :item => pantry_item.to_json,
-      :pantry_type => record.pantry.class.name
-    )
+      Pantry::CellarItem.create!(
+        :record => record,
+        :item => pantry_item.to_json,
+        :pantry_type => record.pantry.class.name
+      )
+    end
   end
   
   def define_stacks
