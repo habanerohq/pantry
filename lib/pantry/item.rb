@@ -9,17 +9,17 @@ module Pantry
       @id_values = id_values.symbolize_keys
       @attributes = attributes.dup.compact.symbolize_keys
       @foreign_values = foreign_values.symbolize_keys
-      @pantry = pantry 
+      @pantry = pantry
     end
 
     def use(options = {})
       puts "++ #{klass.name} #{id_values.inspect}"
-      klass.send(:include, Pantry::Record) unless klass.descendants.include?(Pantry::Record) 
+      klass.send(:include, Pantry::Record) unless klass.descendants.include?(Pantry::Record)
       klass.pantry ||= pantry
       @existing = apply_search(id_values, klass)
       begin
-        ActiveRecord::Base.observers.disable :all do
-          if @existing.any? 
+#        ActiveRecord::Base.observers.disable :all do
+          if @existing.any?
             if action == 'destroy'
               destroy_model
             else
@@ -28,7 +28,7 @@ module Pantry
           else
             save_model
           end
-        end
+#        end
       rescue Pantry::Exception => e
         puts e.message
       end
@@ -81,7 +81,7 @@ module Pantry
 
     def apply_search(search, klass)
       at = klass.arel_table
-      q = at.project(at['*'])
+      q = at.project(at[Arel.star])
       q = gimme(search, klass, at, q)
 
       klass.find_by_sql(q.to_sql)
@@ -129,7 +129,7 @@ module Pantry
           "-- #{a_record.errors.messages.inspect} when using #{klass.name} #{id_values.inspect}. Cannot use the record."
       end
     end
-    
+
     def destroy_model
       # todo: @existing should never have more than one element. what do we do if it has?
       @existing.last.destroy
